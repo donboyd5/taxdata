@@ -1,8 +1,9 @@
-using JuMP, Cbc, NPZ
+using JuMP, Cbc, NPZ, Tulip
 
 function Solve_func(year, tol)
 
 	println("Solving weights for $year ...\n\n")
+	println("DJB using Tulip...\n\n")
 
 	array = npzread(string(year, "_input.npz"))
 
@@ -10,8 +11,13 @@ function Solve_func(year, tol)
 	A2 = array["A2"]
 	b = array["b"]
 
-	model = Model(Cbc.Optimizer)
-	set_optimizer_attribute(model, "logLevel", 1)
+	# model = Model(Cbc.Optimizer)
+	# set_optimizer_attribute(model, "logLevel", 1)
+	# set_optimizer_attribute(model, "autoScale", "on")  # djb
+	model = Model(Tulip.Optimizer)  # djb
+	set_optimizer_attribute(model, "OutputLevel", 1)  # 0=disable output (default), 1=show iterations
+	set_optimizer_attribute(model, "Threads", 10)  # 1=default; Tulip is single-threaded but linear algebra back ends may use multiple threads
+
 	N = size(A1)[2]
 
 	@variable(model, r[1:N] >= 0)
@@ -41,7 +47,8 @@ end
 
 
 
-year_list = [x for x in 2014:2030]
+# year_list = [x for x in 2014:2030]
+year_list = [x for x in 2014:2014]
 tol = 0.70
 
 # Run solver function for all years and tolerances (in order)
