@@ -18,7 +18,7 @@ function Solve_func(year, tol)
 	model = Model(Tulip.Optimizer)  # djb
 	set_optimizer_attribute(model, "OutputLevel", 1)  # 0=disable output (default), 1=show iterations
 	set_optimizer_attribute(model, "Threads", 10)  # 1=default; Tulip is single-threaded but linear algebra back ends may use multiple threads
-	JuMP.set_optimizer_attribute(jump_model, "IPM_IterationsLimit", 500)  # default 100
+	set_optimizer_attribute(model, "IPM_IterationsLimit", 500)  # default 100
 
 	N = size(A1)[2]
 
