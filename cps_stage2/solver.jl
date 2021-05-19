@@ -4,7 +4,7 @@ using Printf
 function Solve_func(year, tol)
 
 	println("Solving weights for $year ...\n\n")
-	println("DJB using Tulip 500...\n\n")
+	println("DJB using Tulip 750...\n\n")
 
 	array = npzread(string(year, "_input.npz"))
 
@@ -17,11 +17,12 @@ function Solve_func(year, tol)
 	# set_optimizer_attribute(model, "logLevel", 1)
 	model = Model(Tulip.Optimizer)  # djb
 	set_optimizer_attribute(model, "OutputLevel", 1)  # 0=disable output (default), 1=show iterations
-	set_optimizer_attribute(model, "IPM_IterationsLimit", 500)  # default 100
+	set_optimizer_attribute(model, "IPM_IterationsLimit", 750)  # default 100
 
     # set_optimizer_attribute(model, "Threads", 10)  # 1=default; Tulip is single-threaded but linear algebra back ends may use multiple threads
 
 	N = size(A1)[2]
+
 
 	@variable(model, r[1:N] >= 0)
 	@variable(model, s[1:N] >= 0)
