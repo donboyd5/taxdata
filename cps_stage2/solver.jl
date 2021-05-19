@@ -36,7 +36,7 @@ function Solve_func(year, tol)
 
 
 	optimize!(model)
-	@printf termination_status(model)
+	termination_status(model)
 	@printf "Objective = %.4f\n" objective_value(model)
 
 	r_vec = value.(r)
