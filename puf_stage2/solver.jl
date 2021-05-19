@@ -1,8 +1,10 @@
-using JuMP, Cbc, NPZ
+using JuMP, Cbc, NPZ, Tulip
+using Printf
 
 function Solve_func(year, tol)
 
 	println("Solving weights for $year ...\n\n")
+	println("Using Tulip as LP solver...\n")
 
 	array = npzread(string(year, "_input.npz"))
 
@@ -10,8 +12,13 @@ function Solve_func(year, tol)
 	A2 = array["A2"]
 	b = array["b"]
 
-	model = Model(Cbc.Optimizer)
-	set_optimizer_attribute(model, "logLevel", 1)
+	# model = Model(Cbc.Optimizer)
+	# set_optimizer_attribute(model, "logLevel", 1)
+	model = Model(Tulip.Optimizer)
+	set_optimizer_attribute(model, "OutputLevel", 1)  # 0=disable output (default), 1=show iterations
+	set_optimizer_attribute(model, "IPM_IterationsLimit", 750)  # default 100
+
+
 	N = size(A1)[2]
 
 	@variable(model, r[1:N] >= 0)
@@ -29,6 +36,13 @@ function Solve_func(year, tol)
 
 	optimize!(model)
 	termination_status(model)
+
+	# add these 2 lines to see termination status and objective function
+	st = termination_status(model)
+	println("Termination status: $st")
+	@printf "Objective = %.4f\n" objective_value(model)
+
+
 
 	r_vec = value.(r)
 	s_vec = value.(s)

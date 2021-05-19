@@ -84,11 +84,23 @@ puf-files: data/puf.csv \
 #                               $(PM_DIR)/cpsmar2016.csv
 # 	cd $(PM_DIR) ; python runmatch.py
 
+# djb start here
+PM_DIR=./taxdata/matching
+PM_PY_FILES := $(shell ls -l $(PM_DIR)/*py | awk '{print $$9}')
+data/cps-matched-puf.csv: $(PM_PY_FILES) \
+                          $(PM_DIR)/puf2011.csv \
+                          $(PM_DIR)/cpsmar2016.csv
+	cd $(PM_DIR) ; python statmatch.py
+
+
+# djb end here
+
+
 data/puf.csv: taxdata/puf/finalprep.py \
                   taxdata/puf/impute_itmexp.py \
                   taxdata/puf/impute_pencon.py \
                   data/cps-matched-puf.csv
-	python createpuf.py
+	python createpuf.py	
 
 puf_stage1/Stage_I_factors.csv: puf_stage1/stage1.py \
                                 puf_stage1/CBO_baseline.csv \

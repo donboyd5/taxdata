@@ -12,6 +12,7 @@ function Solve_func(year, tol)
 	A2 = array["A2"]
 	b = array["b"]
 
+
 	# Replace these next 2 lines with these 3 lines
 	# model = Model(Cbc.Optimizer)
 	# set_optimizer_attribute(model, "logLevel", 1)
@@ -57,8 +58,8 @@ end
 
 
 
-# year_list = [x for x in 2014:2030]
-year_list = [x for x in 2014:2014]
+year_list = [x for x in 2014:2030]
+# year_list = [x for x in 2014:2014]
 tol = 0.70
 
 # Run solver function for all years and tolerances (in order)
