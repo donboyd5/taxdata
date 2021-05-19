@@ -36,7 +36,7 @@ function Solve_func(year, tol)
 
 
 	optimize!(model)
-	termination_status(model)
+	@printf termination_status(model)
 	@printf "Objective = %.4f\n" objective_value(model)
 
 	r_vec = value.(r)
@@ -51,7 +51,7 @@ end
 
 
 # year_list = [x for x in 2014:2030]
-year_list = [x for x in 2014:2014]
+year_list = [x for x in 2014:2015]
 tol = 0.70
 
 # Run solver function for all years and tolerances (in order)
