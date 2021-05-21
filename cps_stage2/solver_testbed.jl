@@ -1,10 +1,15 @@
-using NPZ, JuMP, Cbc, Tulip
+using NPZ
+using JuMP, Cbc, Tulip, Clp, CSDP
+# Notes
+#   Tulip much faster than Cbc; does not quite solve to optimal value
+#   Clp doesn't seem any better than Cbc
+#   CSDP bombs
 
 function Solve_func(year, tol)
 
 	println("\nSolving weights for $year ...\n")
 
-	solver = "Tulip"  # Tulip, Cbc
+	solver = "CSDP"  # Tulip, Cbc, Clp, CSDP
 	Tulip_max_iter = 100  # 100 default, 500 seems good enough
 
 	println("Using solver: ", solver)
@@ -16,6 +21,15 @@ function Solve_func(year, tol)
 		model = Model(Cbc.Optimizer)
 		set_optimizer_attribute(model, "logLevel", 1)
 		# I have not figured out option to limit iterations
+	elseif solver == "Clp"
+		model = Model(Clp.Optimizer)
+		set_optimizer_attribute(model, "LogLevel", 1) # note case different from Cbc
+		# set_optimizer_attribute(model, "MaximumIterations", 2000)
+	elseif solver == "CSDP"
+		# ubuntu installation (in terminal) is:
+		# CSDP_USE_JULIA_LAPACK=true julia -e 'import Pkg; Pkg.add("CSDP"); Pkg.build("CSDP")'
+		println("Using CSDP...\n")
+		model = Model(CSDP.Optimizer)
 	else
 		println("ERROR! Solver must be Tulip or Cbc.")
 	end
