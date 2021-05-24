@@ -19,8 +19,9 @@ function Solve_func(year, tol)
 	N = size(A1)[2]
 
     # scaling: determine a scaling vector with one value per constraint
-	#  - multiply each row of A1 and A2 but its appropriate constant and
-	#  - multiple each element of the b target vector by its appropriate constant
+	#  - the goal is to keep coefficients reasonably near 1.0
+	#  - multiply each row of A1 and A2 by its specific scaling constant
+	#  - multiply each element of the b target vector by its scaling constant
 	#  - current approach: choose scale factors so that the sum of absolute values in each row of
 	#    A1 and of A2 will equal the total number of records, N; maybe we can improve on this
 	scale = N ./ sum(abs.(A1), dims=2)
@@ -72,7 +73,6 @@ function Solve_func(year, tol)
 end
 
 
-
 year_list = [x for x in 2012:2030]
 tol_list = [0.40, 0.38, 0.35, 0.33, 0.30,
  			0.45, 0.45, 0.45, 0.45, 0.45,
@@ -80,9 +80,9 @@ tol_list = [0.40, 0.38, 0.35, 0.33, 0.30,
 			0.45, 0.45, 0.45, 0.45]
 
 # Run solver function for all years and tolerances (in order)
-# for i in zip(year_list, tol_list)
-# 	Solve_func(i[1], i[2])
-# end
+for i in zip(year_list, tol_list)
+	Solve_func(i[1], i[2])
+end
 
-Solve_func(2012, 0.40)
+# Solve_func(2013, 0.38)
 
