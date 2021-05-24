@@ -1,16 +1,11 @@
-using JuMP, Cbc, NPZ, Tulip, Clp
-# using COSMO, OSQP
-using Statistics
+using JuMP, NPZ, Tulip
 using Printf
+using Statistics
 using LinearAlgebra
-
-# year = 2012
-# tol = 0.4
 
 function Solve_func(year, tol)
 
 	println("Solving weights for $year ...\n\n")
-	println("Using Tulip as LP solver...\n")
 
 	# array = npzread(string(year, "_input.npz"))
 
@@ -23,106 +18,71 @@ function Solve_func(year, tol)
 
 	N = size(A1)[2]
 
-    # scale
-    # scale(A) = (A .- mean(A,dims=1)) ./ std(A,dims=1)
-	# sums of absolute values
+    # scaling: determine a scaling vector with one value per constraint
+	#  - multiply each row of A1 and A2 but its appropriate constant and
+	#  - multiple each element of the b target vector by its appropriate constant
+	#  - current approach: choose scale factors so that the sum of absolute values in each row of
+	#    A1 and of A2 will equal the total number of records, N; maybe we can improve on this
 	scale = N ./ sum(abs.(A1), dims=2)
 
     A1s = scale .* A1
 	A2s = scale .* A2
-	# sum(abs.(A1s), dims=2)
-	# sum(abs.(A2s), dims=2)
 	bs = scale .* b
-
-	model = Model(Cbc.Optimizer)
-	set_optimizer_attribute(model, "logLevel", 1)
-
-	# model = Model(Clp.Optimizer)
-	# set_optimizer_attribute(model, "LogLevel", 1) # note case different from Cbc
-	# set_optimizer_attribute(model, "MaximumIterations", 50000)
 
 	model = Model(Tulip.Optimizer)
 	set_optimizer_attribute(model, "OutputLevel", 1)  # 0=disable output (default), 1=show iterations
-	set_optimizer_attribute(model, "IPM_IterationsLimit", 100)  # default 100
+	set_optimizer_attribute(model, "IPM_IterationsLimit", 100)  # default 100 seems to be enough
 
-
-	# @variable(model, r[1:N] >= 0)
-	# @variable(model, s[1:N] >= 0)
-
+	# r and s much each fall between 0 and the tolerance
 	@variable(model, 0 <= r[1:N] <= tol)
 	@variable(model, 0 <= s[1:N] <= tol)
 
 	@objective(model, Min, sum(r[i] + s[i] for i in 1:N))
 
-	# bound on top by tolerance
-	# @constraint(model, [i in 1:N], r[i] + s[i] <= tol)
-
-	# Ax = b
-	# @constraint(model, [i in 1:length(b)], sum(A1[i,j] * r[j] + A2[i,j] * s[j]
-	# 	                          for j in 1:N) == b[i])
-
+	# Ax = b  - used the scaled matrices and vectors
 	@constraint(model, [i in 1:length(bs)], sum(A1s[i,j] * r[j] + A2s[i,j] * s[j]
 		                          for j in 1:N) == bs[i])
 
-
 	optimize!(model)
-	termination_status(model)
 
-	# add these 2 lines to see termination status and objective function
-	st = termination_status(model)
-	println("Termination status: $st")
+	println("Termination status: ", termination_status(model))
 	@printf "Objective = %.4f\n" objective_value(model)
 
 	r_vec = value.(r)
 	s_vec = value.(s)
 
-	# npzwrite(string(year, "_output.npz"), Dict("r" => r_vec, "s" => s_vec))
+	npzwrite(string(year, "_output.npz"), Dict("r" => r_vec, "s" => s_vec))
 
 	println("\n")
 
-	# return x
+	# quick checks on results
+
+	# Did we satisfy constraints?
+	rs = r_vec - s_vec
+	b_calc = sum(rs' .* A1, dims=2)
+	check = vec(b_calc) ./ b
+	println("Quantiles of ratio of calculated targets to intended targets: ")
+	println(quantile!(check, (0, .1, .25, .5, .75, .9, 1)))
+
+	# Are the ratios of new weights to old weights in bounds?
 	x = 1.0 .+ r_vec - s_vec  # note the .+
-	x
+	println("\nQuantiles of ratio of new weight to initial weight: ")
+	println(quantile!(x, (0, .1, .25, .5, .75, .9, 1)))
+
 end
 
 
 
-# year_list = [x for x in 2012:2030]
-# year_list = [x for x in 2012:2012]
-# tol_list = [0.40, 0.38, 0.35, 0.33, 0.30, 0.45, 0.45,
-# 			0.45, 0.45, 0.45, 0.45, 0.45, 0.45, 0.45,
-# 			0.45, 0.45, 0.45, 0.45, 0.45]
+year_list = [x for x in 2012:2030]
+tol_list = [0.40, 0.38, 0.35, 0.33, 0.30,
+ 			0.45, 0.45, 0.45, 0.45, 0.45,
+			0.45, 0.45, 0.45, 0.45,	0.45,
+			0.45, 0.45, 0.45, 0.45]
 
 # Run solver function for all years and tolerances (in order)
 # for i in zip(year_list, tol_list)
 # 	Solve_func(i[1], i[2])
 # end
 
-x = Solve_func(2030, 0.45)
-
-quantile!(x, [0.0, .1, .25, .5, .75, 1])
-
-sum(A1[i,j] * [j] + A2s[i,j] * s[j] for j in 1:N) == bs[i]
-
-start = sum(A1, dims=2)
-x2 = x .- 1.0
-chk = sum(x2' .* A1, dims=2)
-b
-
-chk2 = vec(chk ./ b)
-quantile!(chk2, (0, .1, .25, .5, .75, .9, 1))
-
-dot(A1, x)
-size(A1)
-size(x)
-dot(x, A1')
-
-A1 * x
-
-b
-bs
-
-x
-
-sum(x' .* A1s, dims=2)
+Solve_func(2012, 0.40)
 
