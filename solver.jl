@@ -5,7 +5,7 @@ using LinearAlgebra
 
 function Solve_func(year, tol)
 
-	println("Solving weights for $year ...\n\n")
+	println("\nSolving weights for $year ...\n\n")
 
 	# array = npzread(string(year, "_input.npz"))
 
@@ -23,8 +23,9 @@ function Solve_func(year, tol)
 	#  - multiply each row of A1 and A2 by its specific scaling constant
 	#  - multiply each element of the b target vector by its scaling constant
 	#  - current approach: choose scale factors so that the sum of absolute values in each row of
-	#    A1 and of A2 will equal the total number of records, N; maybe we can improve on this
-	scale = N ./ sum(abs.(A1), dims=2)
+	#    A1 and of A2 will equal the total number of records / 1000; maybe we can improve on this
+
+	scale = (N / 1000.) ./ sum(abs.(A1), dims=2)
 
     A1s = scale .* A1
 	A2s = scale .* A2
@@ -34,13 +35,13 @@ function Solve_func(year, tol)
 	set_optimizer_attribute(model, "OutputLevel", 1)  # 0=disable output (default), 1=show iterations
 	set_optimizer_attribute(model, "IPM_IterationsLimit", 100)  # default 100 seems to be enough
 
-	# r and s much each fall between 0 and the tolerance
+	# r and s must each fall between 0 and the tolerance
 	@variable(model, 0 <= r[1:N] <= tol)
 	@variable(model, 0 <= s[1:N] <= tol)
 
 	@objective(model, Min, sum(r[i] + s[i] for i in 1:N))
 
-	# Ax = b  - used the scaled matrices and vectors
+	# Ax = b  - used the scaled matrices and vector
 	@constraint(model, [i in 1:length(bs)], sum(A1s[i,j] * r[j] + A2s[i,j] * s[j]
 		                          for j in 1:N) == bs[i])
 
@@ -62,13 +63,17 @@ function Solve_func(year, tol)
 	rs = r_vec - s_vec
 	b_calc = sum(rs' .* A1, dims=2)
 	check = vec(b_calc) ./ b
-	println("Quantiles of ratio of calculated targets to intended targets: ")
-	println(quantile!(check, (0, .1, .25, .5, .75, .9, 1)))
+
+	q = (0, .1, .25, .5, .75, .9, 1)
+	println("Quantiles used below: ", q)
+
+	println("\nQuantiles of ratio of calculated targets to intended targets: ")
+	println(quantile!(check, q))
 
 	# Are the ratios of new weights to old weights in bounds?
 	x = 1.0 .+ r_vec - s_vec  # note the .+
 	println("\nQuantiles of ratio of new weight to initial weight: ")
-	println(quantile!(x, (0, .1, .25, .5, .75, .9, 1)))
+	println(quantile!(x, q))
 
 end
 
